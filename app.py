@@ -115,31 +115,37 @@ def calc_admin_fee(price):
     """
     return min(price * 0.10, 10_000)
 
-def calc_tbill_interest(principal, annual_yield_pct, holding_months, tenor_days):
+def calc_tbill_interest(principal, annual_rate_pct, holding_months, tenor_days):
     """
-    Accurate T-bill interest with rollover compounding.
+    T-bill interest using Bamboo/CBN simple interest formula per rollover.
 
-    Each tenor period:
-      period_rate = annual_yield * (tenor_days / 365)
-      Money grows by (1 + period_rate) each rollover.
+    Each rollover:
+      Gross Interest = Pool × Annual Rate × (Tenor Days / 365)
+      Pool reinvested = Previous Pool + Gross Interest
+    Leftover days after complete rollovers are ignored.
 
-    After all complete rollovers, remaining days earn simple interest.
+    Example: ₦5,000,000, 14.99% annual, 83-day tenor, 6-month holding
+      Rollover 1: ₦5,000,000 × 14.99% × (83/365) = ₦170,434  → pool = ₦5,170,434
+      Rollover 2: ₦5,170,434 × 14.99% × (83/365) = ₦176,244  → pool = ₦5,346,678
+      Total interest = ₦346,678
 
-    Returns: (interest, num_rollovers, leftover_days, effective_rate_pct)
+    Returns: (total_interest, num_rollovers, leftover_days, effective_rate_pct)
     """
-    annual_yield  = annual_yield_pct / 100
+    annual_rate   = annual_rate_pct / 100
     holding_days  = holding_months * 30.44
 
-    period_rate   = annual_yield * (tenor_days / 365)
     num_rollovers = int(holding_days // tenor_days)
     leftover_days = holding_days - (num_rollovers * tenor_days)
 
-    compounded    = principal * ((1 + period_rate) ** num_rollovers)
-    leftover_rate = annual_yield * (leftover_days / 365)
-    final_value   = compounded * (1 + leftover_rate)
+    pool           = principal
+    total_interest = 0
 
-    total_interest = final_value - principal
-    effective_rate = (total_interest / principal) * 100
+    for _ in range(num_rollovers):
+        gross_interest = pool * annual_rate * (tenor_days / 365)
+        pool          += gross_interest
+        total_interest += gross_interest
+
+    effective_rate = (total_interest / principal) * 100 if principal > 0 else 0
 
     return total_interest, num_rollovers, int(leftover_days), effective_rate
 
@@ -154,7 +160,7 @@ def run_model(course):
     holding        = p["holding_months"]
     comp_rate      = p["completion_rate"] / 100
     tenor_days     = p["tbill_tenor_days"]
-    tbill_pct      = p["tbill_annual"]
+    tbill_pct      = p["tbill_annual_rate"]
 
     completers     = round(students * comp_rate)
     non_completers = students - completers
@@ -197,7 +203,7 @@ def run_model(course):
         "leftover_days":      leftover_days,
         "effective_rate":     effective_rate,
         "tenor_days":         tenor_days,
-        "tbill_annual":       tbill_pct,
+        "tbill_tenor_rate":   tbill_pct,
         "gross_income":       gross_income,
         "total_refunds":      total_refunds,
         "instructor_cost":    instructor_cost,
@@ -274,31 +280,35 @@ with left_col:
             st.markdown('<div class="section-label">🏦 T-bill Investment Settings</div>', unsafe_allow_html=True)
             t1, t2 = st.columns(2)
             with t1:
-                tbill_annual = st.slider("Annual T-bill Yield (%)", 0, 40, 20, key=f"tbill_{i}")
+                tenor_label      = st.selectbox("T-bill Tenor", list(TENOR_OPTIONS.keys()), key=f"tenor_{i}")
             with t2:
-                tenor_label  = st.selectbox("T-bill Tenor", list(TENOR_OPTIONS.keys()), key=f"tenor_{i}")
+                tbill_tenor_rate = st.number_input(
+                    "Annual T-bill Rate (%)",
+                    min_value=0.0, max_value=100.0, value=14.99, step=0.01, key=f"tbill_{i}",
+                    help="The annualised rate quoted by CBN/your platform (e.g. 14.99%). Interest per rollover = Pool × Rate × (Tenor days / 365)"
+                )
 
             tenor_days = TENOR_OPTIONS[tenor_label]
             holding_days_approx = holding_months * 30.44
 
             # Live preview
-            deposit_pool_preview = price * students  # full price is refundable deposit
+            deposit_pool_preview = price * students
             p_interest, p_rollovers, p_leftover, p_eff = calc_tbill_interest(
-                deposit_pool_preview, tbill_annual, holding_months, tenor_days
+                deposit_pool_preview, tbill_tenor_rate, holding_months, tenor_days
             )
 
             rollover_note = f"{p_rollovers}x {tenor_days}-day rollover{'s' if p_rollovers != 1 else ''}"
             if p_leftover > 0:
-                rollover_note += f" + {p_leftover} days simple interest"
+                rollover_note += f" ({p_leftover} leftover days ignored — not counted)"
 
             if tenor_days <= holding_days_approx:
                 st.markdown(
                     f'<div class="tbill-info">'
                     f'Pool: <b style="color:#e8e3d9;">{naira(deposit_pool_preview)}</b> &nbsp;·&nbsp; '
                     f'{rollover_note}<br>'
-                    f'Effective yield over {holding_months} months: '
+                    f'Effective return over {holding_months} months: '
                     f'<b style="color:#c8f060;">{p_eff:.2f}%</b> &nbsp;·&nbsp; '
-                    f'Interest: <b style="color:#c8f060;">{naira(p_interest)}</b>'
+                    f'Interest earned: <b style="color:#c8f060;">{naira(p_interest)}</b>'
                     f'</div>',
                     unsafe_allow_html=True
                 )
@@ -339,7 +349,7 @@ with left_col:
                 "students":         students,
                 "holding_months":   holding_months,
                 "completion_rate":  completion,
-                "tbill_annual":     tbill_annual,
+                "tbill_annual_rate": tbill_tenor_rate,
                 "tbill_tenor_days": tenor_days,
                 "content_creation": content_creation,
                 "marketing":        marketing,
