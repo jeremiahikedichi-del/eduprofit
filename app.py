@@ -87,6 +87,25 @@ h1, h2, h3 { font-family: 'Syne', sans-serif !important; font-weight: 800 !impor
     border-radius: 6px !important;
 }
 .stSlider > div { padding: 0 !important; }
+
+/* Force labels white on all devices including mobile */
+label,
+p,
+.stMarkdown p,
+div[data-testid="stWidgetLabel"] p,
+div[data-testid="stWidgetLabel"] label,
+[data-testid="stWidgetLabel"] * {
+    color: #e8e3d9 !important;
+}
+.stSelectbox div[data-baseweb="select"] span,
+.stSelectbox div[data-baseweb="select"] div {
+    color: #e8e3d9 !important;
+    background: #1a1f2e !important;
+}
+.streamlit-expanderHeader {
+    color: #e8e3d9 !important;
+    background: #161a22 !important;
+}
 .stButton > button {
     background: #c8f060 !important; color: #0d0f14 !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
