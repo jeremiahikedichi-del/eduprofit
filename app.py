@@ -108,6 +108,11 @@ def naira(n):
     return f"₦{n:,.0f}"
 
 def calc_admin_fee(price):
+    """
+    Admin fee is a markup ON TOP of the course price.
+    Student pays: price + admin_fee
+    Refundable deposit = full course price (untouched)
+    """
     return min(price * 0.10, 10_000)
 
 def calc_tbill_interest(principal, annual_yield_pct, holding_months, tenor_days):
@@ -144,7 +149,8 @@ def run_model(course):
     students       = p["students"]
     price          = p["price"]
     admin_fee      = calc_admin_fee(price)
-    refundable     = price - admin_fee
+    total_charged  = price + admin_fee   # what student actually pays
+    refundable     = price               # full course price is refundable
     holding        = p["holding_months"]
     comp_rate      = p["completion_rate"] / 100
     tenor_days     = p["tbill_tenor_days"]
@@ -164,7 +170,7 @@ def run_model(course):
     gross_income  = total_admin_fees + forfeited_deposits + tbill_interest
     total_refunds = refundable * completers
 
-    instructor_cost       = price * (p["instructor_pct"] / 100) * students
+    instructor_cost       = total_charged * (p["instructor_pct"] / 100) * students
     marketing_cost        = p["marketing"]
     content_creation_cost = p["content_creation"]
     tech_cost             = p["tech"] * holding
@@ -181,6 +187,8 @@ def run_model(course):
         "completers":         completers,
         "non_completers":     non_completers,
         "comp_rate":          comp_rate * 100,
+        "total_charged":      total_charged,
+        "admin_fee":          admin_fee,
         "total_admin_fees":   total_admin_fees,
         "forfeited_deposits": forfeited_deposits,
         "deposit_pool":       deposit_pool,
@@ -252,8 +260,9 @@ with left_col:
                 admin = calc_admin_fee(price)
                 st.markdown(
                     f'<div style="font-family:\'DM Mono\',monospace;font-size:0.8rem;color:#8a8070;">'
-                    f'Admin fee: <span style="color:#c8f060;">{naira(admin)}</span>'
-                    f'&nbsp;|&nbsp;Refundable: <span style="color:#60c8f0;">{naira(price - admin)}</span></div>',
+                    f'Admin fee (markup): <span style="color:#c8f060;">{naira(admin)}</span>'
+                    f'&nbsp;|&nbsp;Student pays: <span style="color:#60c8f0;">{naira(price + admin)}</span>'
+                    f'&nbsp;|&nbsp;Refundable: <span style="color:#e8e3d9;">{naira(price)}</span></div>',
                     unsafe_allow_html=True
                 )
             with c2:
@@ -273,7 +282,7 @@ with left_col:
             holding_days_approx = holding_months * 30.44
 
             # Live preview
-            deposit_pool_preview = (price - admin) * students
+            deposit_pool_preview = price * students  # full price is refundable deposit
             p_interest, p_rollovers, p_leftover, p_eff = calc_tbill_interest(
                 deposit_pool_preview, tbill_annual, holding_months, tenor_days
             )
