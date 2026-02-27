@@ -117,37 +117,13 @@ def calc_admin_fee(price):
 
 def calc_tbill_interest(principal, annual_rate_pct, holding_months, tenor_days):
     """
-    T-bill interest using Bamboo/CBN simple interest formula per rollover.
-
-    Each rollover:
-      Gross Interest = Pool × Annual Rate × (Tenor Days / 365)
-      Pool reinvested = Previous Pool + Gross Interest
-    Leftover days after complete rollovers are ignored.
-
-    Example: ₦5,000,000, 14.99% annual, 83-day tenor, 6-month holding
-      Rollover 1: ₦5,000,000 × 14.99% × (83/365) = ₦170,434  → pool = ₦5,170,434
-      Rollover 2: ₦5,170,434 × 14.99% × (83/365) = ₦176,244  → pool = ₦5,346,678
-      Total interest = ₦346,678
-
-    Returns: (total_interest, num_rollovers, leftover_days, effective_rate_pct)
+    Single T-bill purchase. No rollover.
+    Interest = Principal x Annual Rate x (Tenor Days / 365)
     """
-    annual_rate   = annual_rate_pct / 100
-    holding_days  = holding_months * 30.44
-
-    num_rollovers = int(holding_days // tenor_days)
-    leftover_days = holding_days - (num_rollovers * tenor_days)
-
-    pool           = principal
-    total_interest = 0
-
-    for _ in range(num_rollovers):
-        gross_interest = pool * annual_rate * (tenor_days / 365)
-        pool          += gross_interest
-        total_interest += gross_interest
-
+    annual_rate    = annual_rate_pct / 100
+    total_interest = principal * annual_rate * (tenor_days / 365)
     effective_rate = (total_interest / principal) * 100 if principal > 0 else 0
-
-    return total_interest, num_rollovers, int(leftover_days), effective_rate
+    return total_interest, 1, 0, effective_rate
 
 
 def run_model(course):
@@ -297,18 +273,14 @@ with left_col:
                 deposit_pool_preview, tbill_tenor_rate, holding_months, tenor_days
             )
 
-            rollover_note = f"{p_rollovers}x {tenor_days}-day rollover{'s' if p_rollovers != 1 else ''}"
-            if p_leftover > 0:
-                rollover_note += f" ({p_leftover} leftover days ignored — not counted)"
-
             if tenor_days <= holding_days_approx:
                 st.markdown(
                     f'<div class="tbill-info">'
                     f'Pool: <b style="color:#e8e3d9;">{naira(deposit_pool_preview)}</b> &nbsp;·&nbsp; '
-                    f'{rollover_note}<br>'
-                    f'Effective return over {holding_months} months: '
-                    f'<b style="color:#c8f060;">{p_eff:.2f}%</b> &nbsp;·&nbsp; '
-                    f'Interest earned: <b style="color:#c8f060;">{naira(p_interest)}</b>'
+                    f'Single {tenor_days}-day bill &nbsp;·&nbsp; No rollover<br>'
+                    f'Interest = Pool × {tbill_tenor_rate}% × ({tenor_days}/365)<br>'
+                    f'Interest earned: <b style="color:#c8f060;">{naira(p_interest)}</b> &nbsp;·&nbsp; '
+                    f'Effective return: <b style="color:#c8f060;">{p_eff:.2f}%</b>'
                     f'</div>',
                     unsafe_allow_html=True
                 )
@@ -429,11 +401,6 @@ with right_col:
             </div>
             """, unsafe_allow_html=True)
 
-            # Rollover description
-            rollover_desc = f"{r['num_rollovers']}x {r['tenor_days']}-day bill"
-            if r['leftover_days'] > 0:
-                rollover_desc += f" + {r['leftover_days']} days simple interest"
-
             # Income
             st.markdown(f"""
             <div class="result-section">
@@ -441,8 +408,8 @@ with right_col:
                 <div class="result-row"><span class="label">Admin fees collected</span><span class="value">{naira(r['total_admin_fees'])}</span></div>
                 <div class="result-row"><span class="label">Forfeited deposits</span><span class="value">{naira(r['forfeited_deposits'])}</span></div>
                 <div class="result-row"><span class="label">Deposit pool invested</span><span class="value">{naira(r['deposit_pool'])}</span></div>
-                <div class="result-row"><span class="label">T-bill structure</span><span class="value" style="font-size:0.8rem;color:#8a8070;">{rollover_desc}</span></div>
-                <div class="result-row"><span class="label">Effective yield over period</span><span class="value green">{r['effective_rate']:.2f}%</span></div>
+                <div class="result-row"><span class="label">T-bill structure</span><span class="value" style="font-size:0.8rem;color:#8a8070;">Single {r['tenor_days']}-day bill · no rollover</span></div>
+                <div class="result-row"><span class="label">Effective return on pool</span><span class="value green">{r['effective_rate']:.2f}%</span></div>
                 <div class="result-row"><span class="label">T-bill interest earned</span><span class="value green">{naira(r['tbill_interest'])}</span></div>
                 <div class="total-row"><span>Gross Income</span><span style="font-family:'DM Mono',monospace;color:#60c8f0;">{naira(r['gross_income'])}</span></div>
                 <div class="result-row"><span class="label">Refunds to pay out</span><span class="value red">-{naira(r['total_refunds'])}</span></div>
