@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import math
 
 # ─────────────────────────────────────────────
 #  PAGE CONFIG
@@ -17,178 +18,84 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'Syne', sans-serif;
-}
-
-.stApp {
-    background: #0d0f14;
-    color: #e8e3d9;
-}
-
-h1, h2, h3 {
-    font-family: 'Syne', sans-serif !important;
-    font-weight: 800 !important;
-}
+html, body, [class*="css"] { font-family: 'Syne', sans-serif; }
+.stApp { background: #0d0f14; color: #e8e3d9; }
+h1, h2, h3 { font-family: 'Syne', sans-serif !important; font-weight: 800 !important; }
 
 .main-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 3rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: #e8e3d9;
-    line-height: 1.1;
+    font-family: 'Syne', sans-serif; font-size: 3rem; font-weight: 800;
+    letter-spacing: -0.03em; color: #e8e3d9; line-height: 1.1;
 }
-
 .main-subtitle {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    color: #8a8070;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 2.5rem;
+    font-family: 'DM Mono', monospace; font-size: 0.85rem; color: #8a8070;
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2.5rem;
 }
-
 .accent { color: #c8f060; }
-
 .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #c8f060;
-    margin-bottom: 0.5rem;
-    margin-top: 1.5rem;
+    font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: #c8f060; margin-bottom: 0.5rem; margin-top: 1.5rem;
 }
-
-.course-card {
-    background: #161a22;
-    border: 1px solid #252b38;
-    border-left: 3px solid #c8f060;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-}
-
 .metric-block {
-    background: #161a22;
-    border: 1px solid #252b38;
-    border-radius: 8px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 0.75rem;
+    background: #161a22; border: 1px solid #252b38;
+    border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem;
 }
-
 .metric-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #8a8070;
-    margin-bottom: 0.2rem;
+    font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #8a8070; margin-bottom: 0.2rem;
 }
-
-.metric-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #e8e3d9;
-}
-
+.metric-value { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 700; color: #e8e3d9; }
 .metric-value.positive { color: #c8f060; }
 .metric-value.negative { color: #ff6b6b; }
 .metric-value.neutral  { color: #60c8f0; }
-
 .result-section {
-    background: #161a22;
-    border: 1px solid #252b38;
-    border-radius: 10px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+    background: #161a22; border: 1px solid #252b38;
+    border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem;
 }
-
 .result-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #1e2330;
-    font-size: 0.92rem;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.5rem 0; border-bottom: 1px solid #1e2330; font-size: 0.92rem;
 }
-
 .result-row:last-child { border-bottom: none; }
 .result-row .label { color: #8a8070; }
 .result-row .value { font-family: 'DM Mono', monospace; color: #e8e3d9; }
 .result-row .value.green { color: #c8f060; }
 .result-row .value.red   { color: #ff6b6b; }
-
 .total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 0 0.25rem 0;
-    font-size: 1rem;
-    font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 0 0.25rem 0; font-size: 1rem; font-weight: 700;
 }
-
 .summary-banner {
     background: linear-gradient(135deg, #1a2010 0%, #0f1a08 100%);
-    border: 1px solid #3a5020;
-    border-radius: 10px;
-    padding: 2rem;
-    margin-bottom: 2rem;
+    border: 1px solid #3a5020; border-radius: 10px; padding: 2rem; margin-bottom: 2rem;
 }
-
-.divider {
-    border: none;
-    border-top: 1px solid #252b38;
-    margin: 1.5rem 0;
+.tbill-info {
+    background: #0f1520; border: 1px solid #1e3050; border-left: 3px solid #60c8f0;
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.5rem;
+    font-family: 'DM Mono', monospace; font-size: 0.78rem; color: #8ab8d0; line-height: 1.6;
 }
-
-.tag {
-    display: inline-block;
-    background: #1e2330;
-    color: #c8f060;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
-    margin-right: 0.4rem;
-    letter-spacing: 0.05em;
+.warn-info {
+    background: #1a1500; border: 1px solid #3a3000; border-left: 3px solid #f0c860;
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.5rem;
+    font-family: 'DM Mono', monospace; font-size: 0.78rem; color: #c0a040; line-height: 1.6;
 }
-
-/* Input overrides */
+.divider { border: none; border-top: 1px solid #252b38; margin: 1.5rem 0; }
 .stNumberInput > div > div > input,
 .stTextInput > div > div > input,
 .stSelectbox > div > div {
-    background: #1a1f2e !important;
-    border: 1px solid #252b38 !important;
-    color: #e8e3d9 !important;
-    font-family: 'DM Mono', monospace !important;
+    background: #1a1f2e !important; border: 1px solid #252b38 !important;
+    color: #e8e3d9 !important; font-family: 'DM Mono', monospace !important;
     border-radius: 6px !important;
 }
-
 .stSlider > div { padding: 0 !important; }
-
-/* Button */
 .stButton > button {
-    background: #c8f060 !important;
-    color: #0d0f14 !important;
-    font-family: 'Syne', sans-serif !important;
-    font-weight: 700 !important;
-    border: none !important;
-    border-radius: 6px !important;
-    padding: 0.5rem 1.5rem !important;
-    letter-spacing: 0.02em;
+    background: #c8f060 !important; color: #0d0f14 !important;
+    font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
+    border: none !important; border-radius: 6px !important;
+    padding: 0.5rem 1.5rem !important; letter-spacing: 0.02em;
 }
-
-.stButton > button:hover {
-    background: #d8ff70 !important;
-}
-
-/* Sidebar */
+.stButton > button:hover { background: #d8ff70 !important; }
 section[data-testid="stSidebar"] {
-    background: #0f1118 !important;
-    border-right: 1px solid #1e2330 !important;
+    background: #0f1118 !important; border-right: 1px solid #1e2330 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -203,31 +110,60 @@ def naira(n):
 def calc_admin_fee(price):
     return min(price * 0.10, 10_000)
 
+def calc_tbill_interest(principal, annual_yield_pct, holding_months, tenor_days):
+    """
+    Accurate T-bill interest with rollover compounding.
+
+    Each tenor period:
+      period_rate = annual_yield * (tenor_days / 365)
+      Money grows by (1 + period_rate) each rollover.
+
+    After all complete rollovers, remaining days earn simple interest.
+
+    Returns: (interest, num_rollovers, leftover_days, effective_rate_pct)
+    """
+    annual_yield  = annual_yield_pct / 100
+    holding_days  = holding_months * 30.44
+
+    period_rate   = annual_yield * (tenor_days / 365)
+    num_rollovers = int(holding_days // tenor_days)
+    leftover_days = holding_days - (num_rollovers * tenor_days)
+
+    compounded    = principal * ((1 + period_rate) ** num_rollovers)
+    leftover_rate = annual_yield * (leftover_days / 365)
+    final_value   = compounded * (1 + leftover_rate)
+
+    total_interest = final_value - principal
+    effective_rate = (total_interest / principal) * 100
+
+    return total_interest, num_rollovers, int(leftover_days), effective_rate
+
+
 def run_model(course):
-    p             = course
-    students      = p["students"]
-    price         = p["price"]
-    admin_fee     = calc_admin_fee(price)
-    refundable    = price - admin_fee
-    holding       = p["holding_months"]
-    comp_rate     = p["completion_rate"] / 100
-    tbill_annual  = p["tbill_annual"] / 100
+    p              = course
+    students       = p["students"]
+    price          = p["price"]
+    admin_fee      = calc_admin_fee(price)
+    refundable     = price - admin_fee
+    holding        = p["holding_months"]
+    comp_rate      = p["completion_rate"] / 100
+    tenor_days     = p["tbill_tenor_days"]
+    tbill_pct      = p["tbill_annual"]
 
-    completers        = round(students * comp_rate)
-    non_completers    = students - completers
+    completers     = round(students * comp_rate)
+    non_completers = students - completers
 
-    # Income
-    total_admin_fees      = admin_fee * students
-    forfeited_deposits    = refundable * non_completers
-    deposit_pool          = refundable * students
-    tbill_period_rate     = tbill_annual * (holding / 12)
-    tbill_interest        = deposit_pool * tbill_period_rate
-    gross_income          = total_admin_fees + forfeited_deposits + tbill_interest
+    total_admin_fees   = admin_fee * students
+    forfeited_deposits = refundable * non_completers
+    deposit_pool       = refundable * students
 
-    # Refunds
-    total_refunds         = refundable * completers
+    tbill_interest, num_rollovers, leftover_days, effective_rate = calc_tbill_interest(
+        deposit_pool, tbill_pct, holding, tenor_days
+    )
 
-    # Expenses
+    gross_income  = total_admin_fees + forfeited_deposits + tbill_interest
+    total_refunds = refundable * completers
+
     instructor_cost       = price * (p["instructor_pct"] / 100) * students
     marketing_cost        = p["marketing"]
     content_creation_cost = p["content_creation"]
@@ -241,27 +177,29 @@ def run_model(course):
     net_profit = gross_income - total_expenses
 
     return {
-        "students":            students,
-        "completers":          completers,
-        "non_completers":      non_completers,
-        "comp_rate":           comp_rate * 100,
-        "admin_fee_unit":      admin_fee,
-        "refundable_unit":     refundable,
-        "total_admin_fees":    total_admin_fees,
-        "forfeited_deposits":  forfeited_deposits,
-        "deposit_pool":        deposit_pool,
-        "tbill_period_pct":    tbill_period_rate * 100,
-        "tbill_interest":      tbill_interest,
-        "gross_income":        gross_income,
-        "total_refunds":       total_refunds,
-        "instructor_cost":     instructor_cost,
-        "marketing_cost":      marketing_cost,
-        "content_cost":        content_creation_cost,
-        "tech_cost":           tech_cost,
-        "other_cost":          other_cost,
-        "pay_proc_cost":       pay_proc_cost,
-        "total_expenses":      total_expenses,
-        "net_profit":          net_profit,
+        "students":           students,
+        "completers":         completers,
+        "non_completers":     non_completers,
+        "comp_rate":          comp_rate * 100,
+        "total_admin_fees":   total_admin_fees,
+        "forfeited_deposits": forfeited_deposits,
+        "deposit_pool":       deposit_pool,
+        "tbill_interest":     tbill_interest,
+        "num_rollovers":      num_rollovers,
+        "leftover_days":      leftover_days,
+        "effective_rate":     effective_rate,
+        "tenor_days":         tenor_days,
+        "tbill_annual":       tbill_pct,
+        "gross_income":       gross_income,
+        "total_refunds":      total_refunds,
+        "instructor_cost":    instructor_cost,
+        "marketing_cost":     marketing_cost,
+        "content_cost":       content_creation_cost,
+        "tech_cost":          tech_cost,
+        "other_cost":         other_cost,
+        "pay_proc_cost":      pay_proc_cost,
+        "total_expenses":     total_expenses,
+        "net_profit":         net_profit,
     }
 
 # ─────────────────────────────────────────────
@@ -269,9 +207,8 @@ def run_model(course):
 # ─────────────────────────────────────────────
 st.markdown("""
 <div class="main-title">EduProfit<span class="accent">.</span></div>
-<div class="main-subtitle">Online Course Revenue & Profit Predictor</div>
+<div class="main-subtitle">Online Course Revenue &amp; Profit Predictor</div>
 """, unsafe_allow_html=True)
-
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
@@ -281,6 +218,12 @@ if "num_courses" not in st.session_state:
     st.session_state.num_courses = 1
 
 left_col, right_col = st.columns([1.1, 0.9], gap="large")
+
+TENOR_OPTIONS = {
+    "91 days  (~3 months)":  91,
+    "182 days (~6 months)":  182,
+    "364 days (~12 months)": 364,
+}
 
 with left_col:
     st.markdown('<div class="section-label">📚 Course Configuration</div>', unsafe_allow_html=True)
@@ -296,33 +239,90 @@ with left_col:
                 st.session_state.num_courses -= 1
 
     courses_input = []
+
     for i in range(st.session_state.num_courses):
         with st.expander(f"Course {i+1}", expanded=(i == 0)):
+
+            # Basic Info
             st.markdown('<div class="section-label">Basic Info</div>', unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             with c1:
                 name  = st.text_input("Course Name", value=f"Course {i+1}", key=f"name_{i}")
                 price = st.number_input("Course Price (₦)", min_value=1000, value=50000, step=1000, key=f"price_{i}")
                 admin = calc_admin_fee(price)
-                st.markdown(f'<div style="font-family:\'DM Mono\',monospace;font-size:0.8rem;color:#8a8070;">Admin fee: <span style="color:#c8f060;">{naira(admin)}</span> &nbsp;|&nbsp; Refundable: <span style="color:#60c8f0;">{naira(price - admin)}</span></div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div style="font-family:\'DM Mono\',monospace;font-size:0.8rem;color:#8a8070;">'
+                    f'Admin fee: <span style="color:#c8f060;">{naira(admin)}</span>'
+                    f'&nbsp;|&nbsp;Refundable: <span style="color:#60c8f0;">{naira(price - admin)}</span></div>',
+                    unsafe_allow_html=True
+                )
             with c2:
                 students       = st.number_input("Expected Students", min_value=1, value=100, key=f"students_{i}")
-                holding_months = st.number_input("Holding Period (months)", min_value=1, max_value=60, value=6, key=f"holding_{i}")
+                holding_months = st.number_input("Holding Period (months)", min_value=3, max_value=60, value=6, key=f"holding_{i}")
                 completion     = st.slider("Completion Rate (%)", 0, 100, 15, key=f"comp_{i}")
-                tbill          = st.slider("T-bill Annual Yield (%)", 0, 40, 20, key=f"tbill_{i}")
 
+            # T-bill Settings
+            st.markdown('<div class="section-label">🏦 T-bill Investment Settings</div>', unsafe_allow_html=True)
+            t1, t2 = st.columns(2)
+            with t1:
+                tbill_annual = st.slider("Annual T-bill Yield (%)", 0, 40, 20, key=f"tbill_{i}")
+            with t2:
+                tenor_label  = st.selectbox("T-bill Tenor", list(TENOR_OPTIONS.keys()), key=f"tenor_{i}")
+
+            tenor_days = TENOR_OPTIONS[tenor_label]
+            holding_days_approx = holding_months * 30.44
+
+            # Live preview
+            deposit_pool_preview = (price - admin) * students
+            p_interest, p_rollovers, p_leftover, p_eff = calc_tbill_interest(
+                deposit_pool_preview, tbill_annual, holding_months, tenor_days
+            )
+
+            rollover_note = f"{p_rollovers}x {tenor_days}-day rollover{'s' if p_rollovers != 1 else ''}"
+            if p_leftover > 0:
+                rollover_note += f" + {p_leftover} days simple interest"
+
+            if tenor_days <= holding_days_approx:
+                st.markdown(
+                    f'<div class="tbill-info">'
+                    f'Pool: <b style="color:#e8e3d9;">{naira(deposit_pool_preview)}</b> &nbsp;·&nbsp; '
+                    f'{rollover_note}<br>'
+                    f'Effective yield over {holding_months} months: '
+                    f'<b style="color:#c8f060;">{p_eff:.2f}%</b> &nbsp;·&nbsp; '
+                    f'Interest: <b style="color:#c8f060;">{naira(p_interest)}</b>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    f'<div class="warn-info">'
+                    f'⚠ T-bill tenor ({tenor_days} days) exceeds your holding period '
+                    f'({holding_months} months ≈ {int(holding_days_approx)} days). '
+                    f'The bill won\'t mature before refunds are due. '
+                    f'Use a shorter tenor or extend the holding period.'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+
+            # Expenses
             st.markdown('<div class="section-label">Expenses</div>', unsafe_allow_html=True)
             e1, e2 = st.columns(2)
             with e1:
-                content_creation = st.number_input("Content Creation Cost (₦)", min_value=0, value=200000, step=10000, key=f"content_{i}",
-                                                    help="One-time cost to produce this course")
-                marketing        = st.number_input("Marketing Budget (₦)", min_value=0, value=100000, step=10000, key=f"marketing_{i}",
-                                                   help="Total marketing spend to fill this course")
-                instructor_pct   = st.number_input("Instructor Revenue Share (%)", min_value=0.0, max_value=100.0, value=20.0, step=1.0, key=f"instructor_{i}")
+                content_creation = st.number_input(
+                    "Content Creation Cost (₦)", min_value=0, value=200000, step=10000, key=f"content_{i}",
+                    help="One-time cost to produce this course"
+                )
+                marketing = st.number_input(
+                    "Marketing Budget (₦)", min_value=0, value=100000, step=10000, key=f"marketing_{i}",
+                    help="Total spend to fill this cohort"
+                )
+                instructor_pct = st.number_input(
+                    "Instructor Revenue Share (%)", min_value=0.0, max_value=100.0, value=20.0, step=1.0, key=f"instructor_{i}"
+                )
             with e2:
-                tech             = st.number_input("Tech/Hosting per month (₦)", min_value=0, value=10000, step=1000, key=f"tech_{i}")
-                pay_proc_pct     = st.number_input("Payment Processing Fee (%)", min_value=0.0, max_value=10.0, value=1.5, step=0.1, key=f"payproc_{i}")
-                other            = st.number_input("Other Monthly Costs (₦)", min_value=0, value=5000, step=1000, key=f"other_{i}")
+                tech         = st.number_input("Tech/Hosting per month (₦)", min_value=0, value=10000, step=1000, key=f"tech_{i}")
+                pay_proc_pct = st.number_input("Payment Processing Fee (%)", min_value=0.0, max_value=10.0, value=1.5, step=0.1, key=f"payproc_{i}")
+                other        = st.number_input("Other Monthly Costs (₦)", min_value=0, value=5000, step=1000, key=f"other_{i}")
 
             courses_input.append({
                 "name":             name,
@@ -330,7 +330,8 @@ with left_col:
                 "students":         students,
                 "holding_months":   holding_months,
                 "completion_rate":  completion,
-                "tbill_annual":     tbill,
+                "tbill_annual":     tbill_annual,
+                "tbill_tenor_days": tenor_days,
                 "content_creation": content_creation,
                 "marketing":        marketing,
                 "instructor_pct":   instructor_pct,
@@ -347,14 +348,14 @@ with right_col:
 
     all_results = [run_model(c) for c in courses_input]
 
-    # Summary banner (multi-course)
+    # Summary banner (multi-course only)
     if len(all_results) > 1:
         total_income   = sum(r["gross_income"]   for r in all_results)
         total_expenses = sum(r["total_expenses"] for r in all_results)
         total_profit   = sum(r["net_profit"]     for r in all_results)
         total_refunds  = sum(r["total_refunds"]  for r in all_results)
+        profit_class   = "positive" if total_profit >= 0 else "negative"
 
-        profit_class = "positive" if total_profit >= 0 else "negative"
         st.markdown(f"""
         <div class="summary-banner">
             <div class="metric-label">Total Net Profit — All Courses</div>
@@ -382,7 +383,6 @@ with right_col:
 
         with st.expander(f"📘 {course['name']} — {naira(r['net_profit'])} profit", expanded=True):
 
-            # Top metrics
             m1, m2, m3 = st.columns(3)
             with m1:
                 st.markdown(f"""<div class="metric-block">
@@ -410,14 +410,21 @@ with right_col:
             </div>
             """, unsafe_allow_html=True)
 
+            # Rollover description
+            rollover_desc = f"{r['num_rollovers']}x {r['tenor_days']}-day bill"
+            if r['leftover_days'] > 0:
+                rollover_desc += f" + {r['leftover_days']} days simple interest"
+
             # Income
             st.markdown(f"""
             <div class="result-section">
                 <div style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#c8f060;margin-bottom:0.75rem;">Income Breakdown</div>
-                <div class="result-row"><span class="label">Admin fees</span><span class="value">{naira(r['total_admin_fees'])}</span></div>
+                <div class="result-row"><span class="label">Admin fees collected</span><span class="value">{naira(r['total_admin_fees'])}</span></div>
                 <div class="result-row"><span class="label">Forfeited deposits</span><span class="value">{naira(r['forfeited_deposits'])}</span></div>
                 <div class="result-row"><span class="label">Deposit pool invested</span><span class="value">{naira(r['deposit_pool'])}</span></div>
-                <div class="result-row"><span class="label">T-bill interest ({r['tbill_period_pct']:.1f}% over period)</span><span class="value green">{naira(r['tbill_interest'])}</span></div>
+                <div class="result-row"><span class="label">T-bill structure</span><span class="value" style="font-size:0.8rem;color:#8a8070;">{rollover_desc}</span></div>
+                <div class="result-row"><span class="label">Effective yield over period</span><span class="value green">{r['effective_rate']:.2f}%</span></div>
+                <div class="result-row"><span class="label">T-bill interest earned</span><span class="value green">{naira(r['tbill_interest'])}</span></div>
                 <div class="total-row"><span>Gross Income</span><span style="font-family:'DM Mono',monospace;color:#60c8f0;">{naira(r['gross_income'])}</span></div>
                 <div class="result-row"><span class="label">Refunds to pay out</span><span class="value red">-{naira(r['total_refunds'])}</span></div>
             </div>
@@ -437,13 +444,13 @@ with right_col:
             </div>
             """, unsafe_allow_html=True)
 
-    # Income source breakdown chart
+    # Chart
     if len(all_results) >= 1:
         st.markdown('<div class="section-label" style="margin-top:1rem;">Income Sources — All Courses</div>', unsafe_allow_html=True)
         chart_data = pd.DataFrame({
-            "Course": [c["name"] for c in courses_input],
-            "Admin Fees": [r["total_admin_fees"] for r in all_results],
+            "Course":             [c["name"] for c in courses_input],
+            "Admin Fees":         [r["total_admin_fees"]   for r in all_results],
             "Forfeited Deposits": [r["forfeited_deposits"] for r in all_results],
-            "T-bill Interest": [r["tbill_interest"] for r in all_results],
+            "T-bill Interest":    [r["tbill_interest"]     for r in all_results],
         }).set_index("Course")
         st.bar_chart(chart_data, color=["#c8f060", "#60c8f0", "#f0a060"])
